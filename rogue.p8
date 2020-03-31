@@ -6,8 +6,14 @@ __lua__
 -- initializes global variables
 function _init()
   _time = 0
-  _player_position = {3, 5}
-  _player_offset = {0, 0}
+  _player_position = {
+    x = 3,
+    y = 5
+  }
+  _player_offset = {
+    x = 0,
+    y = 0
+  }
   _player_flipped = false
   _animation_frames_remaining = 0
 end
@@ -19,7 +25,7 @@ function _update60()
     -- handle user input
     for button, direction in pairs(Directions) do
       if btnp(button) then
-        moveplayer(direction)
+        move_player(direction)
       end
     end
   else
@@ -42,7 +48,7 @@ function _draw()
   )
 end
 
--- advances the current player animation by one frame
+-- advances the current animation by one frame
 function animate()
   _player_offset = apply_to_position(_player_offset, decrement_magnitude)
 end
@@ -58,35 +64,50 @@ PlayerAnimationFrames = {240, 241, 242, 243}
 
 -- left, right, up, and down in pico-8 order
 Directions = {
-  [0] = {-1, 0},
-  [1] = {1, 0},
-  [2] = {0, -1},
-  [3] = {0, 1}
+  [0] = {
+    x = -1,
+    y = 0
+  },
+  [1] = {
+    x = 1,
+    y = 0
+  },
+  [2] = {
+    x = 0,
+    y = -1
+  },
+  [3] = {
+    x = 0,
+    y =  1
+  }
 }
 
 -->8
 -- gameplay
 
 -- handles attempted player movement by an {x, y} offset
-function moveplayer(delta)
+function move_player(delta)
   local destination = add_positions(_player_position, delta)
 
-  if delta[1] < 0 then
-    _player_flipped=true
-  elseif delta[1] > 0 then
-    _player_flipped=false
+  if delta.x < 0 then
+    _player_flipped = true
+  elseif delta.x > 0 then
+    _player_flipped = false
   end
 
   if has_collision(destination) then
     local frames = PixelsPerTile / 2
     _animation_frames_remaining = frames
-    _player_offset = multiply_positions(delta, {frames, frames})
+    _player_offset = multiply_positions(
+      delta,
+      {x = frames, y = frames}
+    )
   else
     _player_position = destination
     _animation_frames_remaining = PixelsPerTile
     _player_offset = multiply_positions(
       delta,
-      {-PixelsPerTile, -PixelsPerTile}
+      {x = -PixelsPerTile, y = -PixelsPerTile}
     )
   end
 end
@@ -97,7 +118,7 @@ end
 -- converts coordinate positions into tile positions
 function coordinates_to_tile(coordinates, offset)
   return add_positions(
-    multiply_positions(coordinates, {PixelsPerTile, PixelsPerTile}),
+    multiply_positions(coordinates, {x = PixelsPerTile, y = PixelsPerTile}),
     offset
   )
 end
@@ -111,7 +132,7 @@ end
 function draw_sprite(sprite, position, transparent, recolor, flipped)
   palt(0, transparent)
   pal(6, recolor)
-  spr(sprite, position[1], position[2], 1, 1, flipped)
+  spr(sprite, position.x, position.y, 1, 1, flipped)
   pal()
 end
 
@@ -120,17 +141,22 @@ end
 
 -- whether a given tile has the collision flag 0 set
 function has_collision(position)
-    get_flag_for_position(position, 0)
+    return get_flag_for_position(position, 0)
 end
 
--- whether a given tile has the interaction flag 0 set
+-- whether a given tile has the interaction flag 1 set
 function has_interaction(position)
-    get_flag_for_position(position, 1)
+    return get_flag_for_position(position, 1)
+end
+
+-- whether the given tile has the openable flag 2 set
+function has_openable(position)
+    return get_flag_for_position(position, 2)
 end
 
 -- gets the value of the flag at the position
 function get_flag_for_position(position, flag)
-  local tile = mget(position[1], position[2])
+  local tile = mget(position.x, position.y)
   return fget(tile, flag)
 end
 
@@ -156,24 +182,24 @@ end
 -- adds the coordinates of two {x, y} positions
 function add_positions(position_1, position_2)
   return {
-    position_1[1] + position_2[1],
-    position_1[2] + position_2[2]
+    x = position_1.x + position_2.x,
+    y = position_1.y + position_2.y
   }
 end
 
 -- multiplies the coordinates of two {x, y} positions
 function multiply_positions(position_1, position_2)
   return {
-    position_1[1] * position_2[1],
-    position_1[2] * position_2[2]
+    x = position_1.x * position_2.x,
+    y = position_1.y * position_2.y
   }
 end
 
 -- applies a function to both coordinates of an {x, y} position
 function apply_to_position(position, fn)
   return {
-    fn(position[1]),
-    fn(position[2])
+    x = fn(position.x),
+    y = fn(position.y)
   }
 end
 
