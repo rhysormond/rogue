@@ -115,10 +115,23 @@ function draw_sprite(sprite, position, transparent, recolor, flipped)
   pal()
 end
 
--- whether a position is in collision with a wall tile with the 0 flag
+-->8
+-- interactions
+
+-- whether a given tile has the collision flag 0 set
 function has_collision(position)
+    get_flag_for_position(position, 0)
+end
+
+-- whether a given tile has the interaction flag 0 set
+function has_interaction(position)
+    get_flag_for_position(position, 1)
+end
+
+-- gets the value of the flag at the position
+function get_flag_for_position(position, flag)
   local tile = mget(position[1], position[2])
-  return fget(tile, 0)
+  return fget(tile, flag)
 end
 
 -->8
