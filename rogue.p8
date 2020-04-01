@@ -6,11 +6,13 @@ __lua__
 -- initializes global variables
 function _init()
   _time = 0
-  _player = Actor:new(
-    true,
-    Point:new(3, 5),
-    PlayerAnimationFrames
-  )
+  _actors = {
+    Actor:new(
+      true,
+      Point:new(3, 5),
+      PlayerAnimationFrames
+    )
+  }
   _animation_frames_remaining = 0
 end
 
@@ -18,16 +20,19 @@ end
 function _update60()
   _time += 1
   if _animation_frames_remaining == 0 then
+    actor = dequeue(_actors)
     -- handle user input
     for button, direction in pairs(Directions) do
       if btnp(button) then
-        _player = move_player(_player, direction)
+        actor = move_player(actor, direction)
       end
     end
+    enqueue(_actors, actor)
   else
     -- block until animation is complete
     _animation_frames_remaining -= 1
-    _player.offset = animate(_player.offset)
+    -- only animate the actor we just enqueued
+    _actors[#_actors].offset = animate(_actors[#_actors].offset)
   end
 end
 
@@ -36,11 +41,11 @@ function _draw()
   cls(0)
   map()
   draw_sprite(
-    get_frame(_player.animation),
-    coordinates_to_tile(_player.position, _player.offset),
+    get_frame(_actors[1].animation),
+    coordinates_to_tile(_actors[1].position, _actors[1].offset),
     true,
     10,
-    _player.flipped
+    _actors[1].flipped
   )
 end
 
@@ -117,6 +122,14 @@ end
 -- decrements an integer magnitude by one
 function decrement_magnitude(number)
   return (abs(number) - 1) * sign(number)
+end
+
+-- queues
+enqueue=add
+function dequeue(queue)
+    local v = queue[1]
+    del(queue, v)
+    return v
 end
 
 -->8
