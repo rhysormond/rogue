@@ -44,7 +44,7 @@ end
 
 -- advances the current animation by one frame
 function animate()
-  _player_offset = apply_to_point(_player_offset, decrement_magnitude)
+  _player_offset = _player_offset:apply(decrement_magnitude)
 end
 
 -->8
@@ -52,7 +52,7 @@ end
 
 -- handles attempted player movement by an {x, y} offset
 function move_player(delta)
-  local destination = add_points(_player_position, delta)
+  local destination = _player_position:add(delta)
 
   if delta.x < 0 then
     _player_flipped = true
@@ -63,15 +63,13 @@ function move_player(delta)
   if has_collision(destination) then
     local frames = PixelsPerTile / 2
     _animation_frames_remaining = frames
-    _player_offset = multiply_points(
-      delta,
+    _player_offset = delta:mul(
       Point:new(frames, frames)
     )
   else
     _player_position = destination
     _animation_frames_remaining = PixelsPerTile
-    _player_offset = multiply_points(
-      delta,
+    _player_offset = delta:mul(
       Point:new(-PixelsPerTile, -PixelsPerTile)
     )
   end
@@ -82,9 +80,10 @@ end
 
 -- converts coordinate points into tile positions
 function coordinates_to_tile(coordinates, offset)
-  return add_points(
-    multiply_points(coordinates, Point:new(PixelsPerTile, PixelsPerTile)),
-    offset
+  return offset:add(
+    coordinates:mul(
+      Point:new(PixelsPerTile, PixelsPerTile)
+    )
   )
 end
 
@@ -147,35 +146,35 @@ end
 Point = {}
 Point.__index = Point
 function Point:new(x, y)
-    local this = {
-        x = x,
-        y = y
-    }
-    setmetatable(this, Point)
-    return this
+  local this = {
+    x = x,
+    y = y
+  }
+  setmetatable(this, Point)
+  return this
 end
 
--- adds the coordinates of two points
-function add_points(point_1, point_2)
+-- adds the values of another point
+function Point:add(other)
   return Point:new(
-    point_1.x + point_2.x,
-    point_1.y + point_2.y
+    self.x + other.x,
+    self.y + other.y
   )
 end
 
--- multiplies the coordinates of two points
-function multiply_points(point_1, point_2)
+-- multiplies the values of another point
+function Point:mul(other)
   return Point:new(
-    point_1.x * point_2.x,
-    point_1.y * point_2.y
+    self.x * other.x,
+    self.y * other.y
   )
 end
 
--- applies a function to both coordinates of an point
-function apply_to_point(point, fn)
+-- applies a function to both each coordinate of this point
+function Point:apply(fn)
   return Point:new(
-    fn(point.x),
-    fn(point.y)
+    fn(self.x),
+    fn(self.y)
   )
 end
 
