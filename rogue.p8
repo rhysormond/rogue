@@ -6,14 +6,8 @@ __lua__
 -- initializes global variables
 function _init()
   _time = 0
-  _player_position = {
-    x = 3,
-    y = 5
-  }
-  _player_offset = {
-    x = 0,
-    y = 0
-  }
+  _player_position = Point:new(3, 5)
+  _player_offset = Point:new(0,0)
   _player_flipped = false
   _animation_frames_remaining = 0
 end
@@ -50,44 +44,15 @@ end
 
 -- advances the current animation by one frame
 function animate()
-  _player_offset = apply_to_position(_player_offset, decrement_magnitude)
+  _player_offset = apply_to_point(_player_offset, decrement_magnitude)
 end
-
--->8
--- constants
-
--- the number of pixels in each tile
-PixelsPerTile = 8
-
--- the animation frames for the player sprite
-PlayerAnimationFrames = {240, 241, 242, 243}
-
--- left, right, up, and down in pico-8 order
-Directions = {
-  [0] = {
-    x = -1,
-    y = 0
-  },
-  [1] = {
-    x = 1,
-    y = 0
-  },
-  [2] = {
-    x = 0,
-    y = -1
-  },
-  [3] = {
-    x = 0,
-    y =  1
-  }
-}
 
 -->8
 -- gameplay
 
 -- handles attempted player movement by an {x, y} offset
 function move_player(delta)
-  local destination = add_positions(_player_position, delta)
+  local destination = add_points(_player_position, delta)
 
   if delta.x < 0 then
     _player_flipped = true
@@ -98,16 +63,16 @@ function move_player(delta)
   if has_collision(destination) then
     local frames = PixelsPerTile / 2
     _animation_frames_remaining = frames
-    _player_offset = multiply_positions(
+    _player_offset = multiply_points(
       delta,
-      {x = frames, y = frames}
+      Point:new(frames, frames)
     )
   else
     _player_position = destination
     _animation_frames_remaining = PixelsPerTile
-    _player_offset = multiply_positions(
+    _player_offset = multiply_points(
       delta,
-      {x = -PixelsPerTile, y = -PixelsPerTile}
+      Point:new(-PixelsPerTile, -PixelsPerTile)
     )
   end
 end
@@ -115,10 +80,10 @@ end
 -->8
 -- utilities
 
--- converts coordinate positions into tile positions
+-- converts coordinate points into tile positions
 function coordinates_to_tile(coordinates, offset)
-  return add_positions(
-    multiply_positions(coordinates, {x = PixelsPerTile, y = PixelsPerTile}),
+  return add_points(
+    multiply_points(coordinates, Point:new(PixelsPerTile, PixelsPerTile)),
     offset
   )
 end
@@ -129,39 +94,12 @@ function get_frame(sequence)
 end
 
 -- draws a single sprite to the screen
-function draw_sprite(sprite, position, transparent, recolor, flipped)
+function draw_sprite(sprite, point, transparent, recolor, flipped)
   palt(0, transparent)
   pal(6, recolor)
-  spr(sprite, position.x, position.y, 1, 1, flipped)
+  spr(sprite, point.x, point.y, 1, 1, flipped)
   pal()
 end
-
--->8
--- interactions
-
--- whether a given tile has the collision flag 0 set
-function has_collision(position)
-    return get_flag_for_position(position, 0)
-end
-
--- whether a given tile has the interaction flag 1 set
-function has_interaction(position)
-    return get_flag_for_position(position, 1)
-end
-
--- whether the given tile has the openable flag 2 set
-function has_openable(position)
-    return get_flag_for_position(position, 2)
-end
-
--- gets the value of the flag at the position
-function get_flag_for_position(position, flag)
-  local tile = mget(position.x, position.y)
-  return fget(tile, flag)
-end
-
--->8
--- position math
 
 -- gets the sign of a number
 function sign(number)
@@ -179,29 +117,84 @@ function decrement_magnitude(number)
   return (abs(number) - 1) * sign(number)
 end
 
--- adds the coordinates of two {x, y} positions
-function add_positions(position_1, position_2)
-  return {
-    x = position_1.x + position_2.x,
-    y = position_1.y + position_2.y
-  }
+-->8
+-- interactions
+
+-- whether a given tile has the collision flag 0 set
+function has_collision(point)
+    return get_flag_for_point(point, 0)
 end
 
--- multiplies the coordinates of two {x, y} positions
-function multiply_positions(position_1, position_2)
-  return {
-    x = position_1.x * position_2.x,
-    y = position_1.y * position_2.y
-  }
+-- whether a given tile has the interaction flag 1 set
+function has_interaction(point)
+    return get_flag_for_point(point, 1)
 end
 
--- applies a function to both coordinates of an {x, y} position
-function apply_to_position(position, fn)
-  return {
-    x = fn(position.x),
-    y = fn(position.y)
-  }
+-- whether the given tile has the openable flag 2 set
+function has_openable(point)
+    return get_flag_for_point(point, 2)
 end
+
+-- gets the value of the flag at the point
+function get_flag_for_point(point, flag)
+  local tile = mget(point.x, point.y)
+  return fget(tile, flag)
+end
+
+-->8
+-- points
+
+Point = {}
+Point.__index = Point
+function Point:new(x, y)
+    local this = {
+        x = x,
+        y = y
+    }
+    setmetatable(this, Point)
+    return this
+end
+
+-- adds the coordinates of two points
+function add_points(point_1, point_2)
+  return Point:new(
+    point_1.x + point_2.x,
+    point_1.y + point_2.y
+  )
+end
+
+-- multiplies the coordinates of two points
+function multiply_points(point_1, point_2)
+  return Point:new(
+    point_1.x * point_2.x,
+    point_1.y * point_2.y
+  )
+end
+
+-- applies a function to both coordinates of an point
+function apply_to_point(point, fn)
+  return Point:new(
+    fn(point.x),
+    fn(point.y)
+  )
+end
+
+-->8
+-- constants
+
+-- the number of pixels in each tile
+PixelsPerTile = 8
+
+-- the animation frames for the player sprite
+PlayerAnimationFrames = {240, 241, 242, 243}
+
+-- left, right, up, and down in pico-8 order
+Directions = {
+  [0] = Point:new(-1, 0),
+  [1] = Point:new(1, 0),
+  [2] = Point:new(0, -1),
+  [3] = Point:new(0, 1)
+}
 
 __gfx__
 000000000000000066666660000000000000000000000000000000000000000000000000000000000000000000000000050000000aaaaa000000000000000000
