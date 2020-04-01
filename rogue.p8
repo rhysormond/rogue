@@ -6,9 +6,11 @@ __lua__
 -- initializes global variables
 function _init()
   _time = 0
-  _player_position = Point:new(3, 5)
-  _player_offset = Point:new(0,0)
-  _player_flipped = false
+  _player = Actor:new(
+    true,
+    Point:new(3, 5),
+    PlayerAnimationFrames
+  )
   _animation_frames_remaining = 0
 end
 
@@ -19,13 +21,13 @@ function _update60()
     -- handle user input
     for button, direction in pairs(Directions) do
       if btnp(button) then
-        move_player(direction)
+        _player = move_player(_player, direction)
       end
     end
   else
     -- block until animation is complete
     _animation_frames_remaining -= 1
-    _player_offset = animate(_player_offset)
+    _player.offset = animate(_player.offset)
   end
 end
 
@@ -34,11 +36,11 @@ function _draw()
   cls(0)
   map()
   draw_sprite(
-    get_frame(PlayerAnimationFrames),
-    coordinates_to_tile(_player_position, _player_offset),
+    get_frame(_player.animation),
+    coordinates_to_tile(_player.position, _player.offset),
     true,
     10,
-    _player_flipped
+    _player.flipped
   )
 end
 
@@ -51,28 +53,29 @@ end
 -- gameplay
 
 -- handles attempted player movement by an {x, y} offset
-function move_player(delta)
-  local destination = _player_position:add(delta)
+function move_player(actor, delta)
+  local destination = actor.position:add(delta)
 
   if delta.x < 0 then
-    _player_flipped = true
+    actor.flipped = true
   elseif delta.x > 0 then
-    _player_flipped = false
+    actor.flipped = false
   end
 
   if has_collision(destination) then
     local frames = PixelsPerTile / 2
     _animation_frames_remaining = frames
-    _player_offset = delta:mul(
+    actor.offset = delta:mul(
       Point:new(frames, frames)
     )
   else
-    _player_position = destination
+    actor.position = destination
     _animation_frames_remaining = PixelsPerTile
-    _player_offset = delta:mul(
+    actor.offset = delta:mul(
       Point:new(-PixelsPerTile, -PixelsPerTile)
     )
   end
+  return actor
 end
 
 -->8
@@ -138,6 +141,23 @@ end
 function get_flag_for_point(point, flag)
   local tile = mget(point.x, point.y)
   return fget(tile, flag)
+end
+
+-->8
+-- actors
+
+Actor = {}
+Actor.__index = Actor
+function Actor:new(player, position, animation)
+  local this = {
+    player = player,
+    position = position,
+    animation = animation,
+    offset = Point:new(0, 0),
+    flipped = false
+  }
+  setmetatable(this, Actor)
+  return this
 end
 
 -->8
