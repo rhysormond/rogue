@@ -25,7 +25,7 @@ function _update60()
   else
     -- block until animation is complete
     _animation_frames_remaining -= 1
-    animate()
+    _player_offset = animate(_player_offset)
   end
 end
 
@@ -43,8 +43,8 @@ function _draw()
 end
 
 -- advances the current animation by one frame
-function animate()
-  _player_offset = _player_offset:apply(decrement_magnitude)
+function animate(offset)
+  return offset:apply(decrement_magnitude)
 end
 
 -->8
