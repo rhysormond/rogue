@@ -58,9 +58,10 @@ end
 -->8
 -- gameplay
 
--- handles attempted player movement by an {x, y} offset
+-- handles attempted player movement by a point offset
 function move_player(actor, delta)
-  local destination = actor.position:add(delta)
+  local to_point = actor.position:add(delta)
+  local to_tile = get_tile(to_point)
 
   if delta.x < 0 then
     actor.flipped = true
@@ -68,20 +69,30 @@ function move_player(actor, delta)
     actor.flipped = false
   end
 
-  if has_collision(destination) then
+  if has_collision(to_tile) then
     local frames = PixelsPerTile / 2
     _animation_frames_remaining = frames
     actor.offset = delta:mul(
       Point:new(frames, frames)
     )
   else
-    actor.position = destination
+    actor.position = to_point
     _animation_frames_remaining = PixelsPerTile
     actor.offset = delta:mul(
       Point:new(-PixelsPerTile, -PixelsPerTile)
     )
   end
+
+  interact(to_tile, to_point)
+
   return actor
+end
+
+-- handles a player's interaction with a tile
+function interact(tile, point)
+  if has_interaction(tile) then
+    set_tile(point, tile - 1)
+  end
 end
 
 -->8
@@ -111,13 +122,13 @@ end
 
 -- gets the sign of a number
 function sign(number)
-   if number < 0 then
-     return -1
-   elseif number > 0 then
-     return 1
-   else
-     return 0
-   end
+  if number < 0 then
+    return -1
+  elseif number > 0 then
+    return 1
+  else
+    return 0
+  end
 end
 
 -- decrements an integer magnitude by one
@@ -126,35 +137,34 @@ function decrement_magnitude(number)
 end
 
 -- queues
-enqueue=add
+enqueue = add
 function dequeue(queue)
-    local v = queue[1]
-    del(queue, v)
-    return v
+  local v = queue[1]
+  del(queue, v)
+  return v
 end
 
 -->8
 -- interactions
 
+-- gets the tile corresponding to the point
+function get_tile(point)
+  return mget(point.x, point.y)
+end
+
+-- sets the tile corresponding to the point
+function set_tile(point, tile)
+  mset(point.x, point.y, tile)
+end
+
 -- whether a given tile has the collision flag 0 set
-function has_collision(point)
-    return get_flag_for_point(point, 0)
+function has_collision(tile)
+  return fget(tile, 0)
 end
 
 -- whether a given tile has the interaction flag 1 set
-function has_interaction(point)
-    return get_flag_for_point(point, 1)
-end
-
--- whether the given tile has the openable flag 2 set
-function has_openable(point)
-    return get_flag_for_point(point, 2)
-end
-
--- gets the value of the flag at the point
-function get_flag_for_point(point, flag)
-  local tile = mget(point.x, point.y)
-  return fget(tile, flag)
+function has_interaction(tile)
+  return fget(tile, 1)
 end
 
 -->8
