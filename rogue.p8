@@ -23,7 +23,8 @@ function _update60()
     actor = dequeue(_actors)
     -- handle user input
     for button, direction in pairs(Directions) do
-      if btnp(button) then
+      -- converting between 1-indexed arrays to 0-indexed buttons
+      if btnp(button - 1) then
         actor = move_player(actor, direction)
       end
     end
@@ -222,10 +223,10 @@ PlayerAnimationFrames = {240, 241, 242, 243}
 
 -- left, right, up, and down in pico-8 order
 Directions = {
-  [0] = Point:new(-1, 0),
-  [1] = Point:new(1, 0),
-  [2] = Point:new(0, -1),
-  [3] = Point:new(0, 1)
+  Point:new(-1, 0),
+  Point:new(1, 0),
+  Point:new(0, -1),
+  Point:new(0, 1)
 }
 
 __gfx__
